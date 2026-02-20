@@ -1,35 +1,3 @@
- (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
-diff --git a/README.md b/README.md
-index 12c526fc3d3d2f68976dde21d0bbb9d2ca5405cb..d2ca5c272d336161a8984a98606ffb83f4afe573 100644
---- a/README.md
-+++ b/README.md
-@@ -1,2 +1,211 @@
- # dora-math
--朵拉的数学练习
-+
-+朵拉的十以内加减法练习小程序（Streamlit）。
-+
-+## 给小白的最简单用法
-+
-+### 1) 安装依赖
-+```bash
-+pip install streamlit
-+```
-+
-+### 2) 启动程序
-+```bash
-+streamlit run app.py
-+```
-+
-+浏览器打开后，就可以开始做题。
-+
-+---
-+
-+## 你可以直接复制粘贴的代码（按文件覆盖）
-+
-+> 下面 2 个文件是核心。你如果把旧代码删乱了，直接按文件名覆盖即可。
-+
-+### `app.py`
 +```python
 +import streamlit as st
 +
