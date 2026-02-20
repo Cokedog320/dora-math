@@ -1,5 +1,12 @@
 import streamlit as st
-import random
+
+from math_game import (
+    ANSWER_MAX,
+    QUESTION_COUNT,
+    Question,
+    cleanup_old_rounds,
+    generate_questions,
+)
 
 # --- 1. 页面设置 ---
 st.set_page_config(page_title="朵拉的数学探险", page_icon="🏹")
@@ -14,34 +21,24 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🏹 朵拉的数学探险")
-st.caption("👇 直接点空白框输入答案")
+st.caption("👇 直接点空白框输入答案（已启用进阶：不出 0/1，结果更有挑战）")
 
 # --- 2. 核心逻辑 ---
 
+def get_or_create_questions(round_number: int) -> list[Question]:
+    """根据局数读取或生成题目。"""
+    current_game_key = f"questions_round_{round_number}"
+    if current_game_key not in st.session_state:
+        st.session_state[current_game_key] = generate_questions(QUESTION_COUNT)
+    return st.session_state[current_game_key]
+
+
 # A. 初始化“游戏局数”编号 (这是强制刷新的关键！)
-if 'game_round' not in st.session_state:
+if "game_round" not in st.session_state:
     st.session_state.game_round = 1
 
-# B. 生成题目 (绑定在当前局数上)
-# 我们用 game_round 作为缓存的一部分，局数一变，题目自动重新生成
-current_game_key = f"questions_round_{st.session_state.game_round}"
-
-if current_game_key not in st.session_state:
-    new_questions = []
-    for _ in range(10):
-        a = random.randint(0, 10)
-        op = random.choice(['+', '-'])
-        if op == '+': 
-            b = random.randint(0, 10 - a)
-            ans = a + b
-        else: 
-            b = random.randint(0, a)
-            ans = a - b
-        new_questions.append({"a": a, "op": op, "b": b, "ans": ans})
-    st.session_state[current_game_key] = new_questions
-
 # 获取当前题目
-questions = st.session_state[current_game_key]
+questions = get_or_create_questions(st.session_state.game_round)
 
 # --- 3. 题目显示区 ---
 correct_count = 0
@@ -52,7 +49,7 @@ for i, q in enumerate(questions):
     
     with c1:
         st.markdown(f"**第 {i+1} 题**")
-        st.markdown(f"## {q['a']} {q['op']} {q['b']} = ?")
+        st.markdown(f"## {q.a} {q.op} {q.b} = ?")
     
     with c2:
         # --- 关键修改：Key 必须包含局数 ---
@@ -62,8 +59,8 @@ for i, q in enumerate(questions):
         
         val = st.number_input(
             "请输入答案", 
-            min_value=0, 
-            max_value=20, 
+            min_value=0,
+            max_value=ANSWER_MAX,
             value=None,  
             step=1,
             placeholder="?", 
@@ -73,7 +70,7 @@ for i, q in enumerate(questions):
         
         if val is None:
             st.write("✏️ ...")
-        elif val == q['ans']:
+        elif val == q.ans:
             st.success("✅ 对啦！")
             correct_count += 1
         else:
@@ -82,7 +79,10 @@ for i, q in enumerate(questions):
 # --- 4. 结算与重置 ---
 st.divider()
 
-if correct_count == 10:
+st.progress(correct_count / QUESTION_COUNT)
+st.caption(f"当前进度：{correct_count}/{QUESTION_COUNT}")
+
+if correct_count == QUESTION_COUNT:
     st.balloons()
     st.success("🎉 太棒了！全部通关！")
 
@@ -90,5 +90,5 @@ if correct_count == 10:
 if st.button("🔄 换一组新题目"):
     # 只需要做一件事：让局数 +1
     st.session_state.game_round += 1
-    # 之前的题目数据不用管，留着也没事，反正 Key 变了取不到
+    cleanup_old_rounds(st.session_state, st.session_state.game_round)
     st.rerun()
